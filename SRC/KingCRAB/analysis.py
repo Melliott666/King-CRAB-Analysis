@@ -126,8 +126,14 @@ def guided_focus_scan(g,nfield=4,nap=5):
       gg=replace(g,d_m2_ii=x); t=time.perf_counter(); m=rt.evaluate(gg,nfield,nap); rows.append({'d_m2_ii':x,'paraxial_prediction':pred,'runtime_s':time.perf_counter()-t,**m})
     return pd.DataFrame(rows)
 
-def throughput_profiles(g=None,nfield=3,nap=4,npoints=9):
-    """One-dimensional deterministic profiles and plateau-derived position errors."""
+def throughput_profiles(g=None,nfield=3,nap=4,npoints=9,flat_span_percent=1.0):
+    """Return throughput profiles without inventing maxima on flat curves.
+
+    If the full relative throughput span is below ``flat_span_percent``, photon
+    count does not constrain that coordinate.  The current hardware position is
+    retained for throughput; a separate best-focus position is reported from
+    the minimum finite R80 value.
+    """
     g=g or Geometry(); rows=[]
     for var,(lo,hi) in BOUNDS.items():
       for x in np.linspace(lo,hi,npoints):
@@ -136,8 +142,18 @@ def throughput_profiles(g=None,nfield=3,nap=4,npoints=9):
     d=add_post_l1_percent(pd.DataFrame(rows),g)
     rec=[]
     for var,q in d.groupby('variable',sort=False):
-      q=q[np.isfinite(q.weighted_efficiency)]; im=q.weighted_efficiency.idxmax(); best=q.loc[im]; plateau=q[q.weighted_efficiency>=.98*best.weighted_efficiency]
-      rec.append({'variable':var,'recommended_mm':best.position_mm,'minus_mm':best.position_mm-plateau.position_mm.min(),'plus_mm':plateau.position_mm.max()-best.position_mm,'maximum_throughput':best.weighted_efficiency,'plateau_definition':'within 2% of profile maximum'})
+      q=q[np.isfinite(q.weighted_efficiency)].copy(); im=q.weighted_efficiency.idxmax(); numerical_best=q.loc[im]
+      mean=float(q.weighted_efficiency.mean()); span=100*float(q.weighted_efficiency.max()-q.weighted_efficiency.min())/mean if mean else np.inf
+      sensitive=span>=flat_span_percent; current=float(getattr(g,var))
+      chosen_position=float(numerical_best.position_mm) if sensitive else current
+      plateau=q[q.weighted_efficiency>=.98*numerical_best.weighted_efficiency]
+      focus=q[np.isfinite(q.r80_mm)]; best_focus=float(focus.loc[focus.r80_mm.idxmin()].position_mm) if len(focus) else np.nan
+      rec.append({'variable':var,'throughput_sensitive':sensitive,'relative_throughput_span_percent':span,
+                  'recommended_mm':chosen_position,'numerical_maximum_mm':float(numerical_best.position_mm),
+                  'best_focus_mm':best_focus,'minus_mm':float(chosen_position-plateau.position_mm.min()),
+                  'plus_mm':float(plateau.position_mm.max()-chosen_position),'maximum_throughput':float(numerical_best.weighted_efficiency),
+                  'recommendation_basis':'throughput maximum' if sensitive else 'throughput insensitive: retain current hardware position',
+                  'plateau_definition':'within 2% of profile maximum'})
     return d,pd.DataFrame(rec)
 
 def run_gas_pressure_hybrid(pressures=(1.,3.,5.,7.5,10.),nfield=4,nap=6):

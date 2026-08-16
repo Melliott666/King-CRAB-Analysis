@@ -4,8 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import numpy as np
-
-_trapezoid = getattr(np, "trapezoid", np.trapz)
+from .numerics import trapezoid
 
 
 @dataclass(frozen=True)
@@ -63,7 +62,7 @@ def extract_observables(waveforms, sigmas, pulse_start_time=20e-9, R=50.0):
     heights, charges = [], []
     for t, v in waveforms:
         heights.append(-np.min(v)); mask = t > pulse_start_time
-        charges.append(_trapezoid(-v[mask], t[mask]) / R if np.sum(mask) >= 2 else np.nan)
+        charges.append(trapezoid(-v[mask], t[mask]) / R if np.sum(mask) >= 2 else np.nan)
     return np.asarray(heights), np.asarray(charges), np.asarray(sigmas)
 
 
@@ -77,7 +76,7 @@ def integrate_pulse_region(t, v, R=50.0, pulse_start_time=20e-9):
     while left > 0 and v[left] < 0: left -= 1
     while right < len(v)-1 and v[right] < 0: right += 1
     if right <= left: return np.nan, np.nan, np.nan
-    return _trapezoid(-v[left:right+1], t[left:right+1]) / R, t[left], t[right]
+    return trapezoid(-v[left:right+1], t[left:right+1]) / R, t[left], t[right]
 
 
 def waveform_duration(waveforms):

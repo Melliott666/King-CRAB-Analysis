@@ -5,6 +5,7 @@ import os, re, json, glob, math, warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from .numerics import trapezoid
 try:
  from scipy.integrate import trapezoid, quad
  from scipy.optimize import curve_fit
@@ -24,7 +25,7 @@ def trapezoid_integral(y, x):
     """Use the trapezoid API available in the active NumPy version."""
     integration_function = getattr(np, "trapezoid", None)
     if integration_function is None:
-        integration_function = np.trapz
+        integration_function = trapezoid
     return integration_function(y, x)
 
 def estimate_spe_charge(charges, bins=80):

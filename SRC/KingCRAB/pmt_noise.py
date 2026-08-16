@@ -5,6 +5,7 @@ import os, re, json, glob, math, warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from .numerics import trapezoid
 try:
  from scipy.integrate import trapezoid, quad
  from scipy.optimize import curve_fit
@@ -93,7 +94,7 @@ def trapezoid_integral(y, x):
     """Compatible with NumPy versions before and after trapz removal."""
     integration_function = getattr(np, "trapezoid", None)
     if integration_function is None:
-        integration_function = np.trapz
+        integration_function = trapezoid
     return integration_function(y, x)
 
 def dark_file_observables(filepath):

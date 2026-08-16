@@ -5,6 +5,7 @@ import os, re, json, glob, math, warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from .numerics import trapezoid
 try:
  from scipy.integrate import trapezoid, quad
  from scipy.optimize import curve_fit
@@ -36,7 +37,7 @@ def ReadFile(file_path):
 
 def normalize_area(df):
     #Trapezodial integration along the curve
-    area = np.trapezoid(df["Intensity"], df["Mass"])
+    area = trapezoid(df["Intensity"], df["Mass"])
     if area == 0:
         return df
     df_norm = df.copy()
@@ -59,7 +60,7 @@ def ROI(df, lo, hi):
     mask = (m >= lo) & (m <= hi)
     if not np.any(mask):
         return 0.0
-    return float(np.trapz(np.clip(y[mask], 0, None), m[mask]))
+    return float(trapezoid(np.clip(y[mask], 0, None), m[mask]))
 
 def compositions(df_bgsub, windows=None):
     if windows is None: windows=WINDOWS
@@ -155,7 +156,7 @@ def integrate_window(df, lo, hi):
     m = df["Mass"].to_numpy()
     y = np.clip(df["Intensity"].to_numpy(), 0, None)
     mask = (m>=lo)&(m<=hi)
-    return float(np.trapz(y[mask], m[mask])) if mask.any() else 0.0
+    return float(trapezoid(y[mask], m[mask])) if mask.any() else 0.0
 
 def compositions(df_bs, WINDOWS):
     Parts = {name: integrate_window(df_bs, *win) for name,win in WINDOWS.items()}
