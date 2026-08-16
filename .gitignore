@@ -1,0 +1,29 @@
+.DS_Store
+.cache/
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Generated presentation/report artifacts are not part of the analysis source.
+Presentation/
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.pdf
+*.snm
+*.synctex.gz
+*.tex
+*.toc
+
+# Large deterministic NEXUS-derived event tables are local analysis inputs.
+# They are reproducible but include files larger than GitHub's 100 MB limit.
+DATA/cosmogenics/
+
+# Notebook APIs embed figures; they do not export result trees.
+*Results/
+*_RESULTS/
